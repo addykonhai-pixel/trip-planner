@@ -5,7 +5,7 @@ from email.message import EmailMessage
 
 import streamlit as st
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 
 # ============================================================
@@ -79,8 +79,8 @@ def get_secret(name):
     return os.getenv(name)
 
 
-def get_openai_api_key():
-    return get_secret("OPENAI_API_KEY")
+def get_google_api_key():
+    return get_secret("GOOGLE_API_KEY")
 
 
 # ============================================================
@@ -89,14 +89,9 @@ def get_openai_api_key():
 
 @st.cache_resource
 def initialize_model(api_key):
-    """
-    Initialize the OpenAI model through LangChain.
-    """
-
-    return ChatOpenAI(
-        api_key=api_key,
-        model="gpt-4o-mini",
-        temperature=0.3,
+    return ChatGoogleGenerativeAI(
+        model="gemini-3.6-flash",
+        google_api_key=api_key,
     )
 
 
@@ -109,7 +104,7 @@ def generate_travel_information(user_query):
     Generate a travel plan using LangChain + OpenAI.
     """
 
-    api_key = get_openai_api_key()
+   api_key = get_google_api_key()
 
     if not api_key:
         raise ValueError(
