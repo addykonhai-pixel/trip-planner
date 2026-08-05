@@ -1,3 +1,4 @@
+```python
 import os
 import smtplib
 import uuid
@@ -40,13 +41,6 @@ def render_custom_css():
             margin-bottom: 1.5rem;
         }
 
-        .info-box {
-            padding: 1rem;
-            border-radius: 10px;
-            background-color: #f5f5f5;
-            margin-bottom: 1rem;
-        }
-
         .footer {
             text-align: center;
             margin-top: 2rem;
@@ -60,56 +54,60 @@ def render_custom_css():
 
 
 # ============================================================
-# API KEY / SECRETS
+# GET SECRET
 # ============================================================
 
 def get_secret(name):
     """
-    Get a secret from Streamlit secrets first,
-    then fall back to environment variables.
+    Get a secret from Streamlit Secrets first,
+    then from environment variables.
     """
 
     try:
         value = st.secrets.get(name)
+
         if value:
             return value
+
     except Exception:
         pass
 
     return os.getenv(name)
 
 
+# ============================================================
+# GOOGLE API KEY
+# ============================================================
+
 def get_google_api_key():
     return get_secret("GOOGLE_API_KEY")
 
 
 # ============================================================
-# INITIALIZE AI MODEL
+# INITIALIZE GEMINI
 # ============================================================
 
 @st.cache_resource
 def initialize_model(api_key):
     return ChatGoogleGenerativeAI(
-        model="gemini-3.6-flash",
+        model="gemini-2.5-flash",
         google_api_key=api_key,
+        temperature=0.3,
     )
 
 
 # ============================================================
-# AI TRAVEL AGENT
+# GENERATE TRAVEL INFORMATION
 # ============================================================
 
 def generate_travel_information(user_query):
-    """
-    Generate a travel plan using LangChain + OpenAI.
-    """
 
-   api_key = get_google_api_key()
+    api_key = get_google_api_key()
 
     if not api_key:
         raise ValueError(
-            "OpenAI API key not found. "
-            "Please add OPENAI_API_KEY to Streamlit Secrets."
+            "Google API key not found. "
+            "Please add GOOGLE_API_KEY to Streamlit Secrets."
         )
 
     llm = initialize_model(api_key)
@@ -117,22 +115,24 @@ def generate_travel_information(user_query):
     system_prompt = """
 You are an AI Travel Agent.
 
-Your job is to create useful, realistic and well-structured travel
-information based on the user's request.
+Your job is to create useful, realistic and well-structured
+travel information based on the user's request.
 
-IMPORTANT:
+IMPORTANT RULES:
+
 - Do not invent live flight prices.
 - Do not invent live hotel availability.
-- Do not claim that a flight or hotel is currently available unless
-  the user has provided that information.
-- Clearly distinguish estimated information from confirmed information.
-- If the user asks for flights or hotels, provide useful categories,
-  suggested areas, approximate planning guidance and what the traveler
-  should check before booking.
+- Do not claim that a flight or hotel is currently available
+  unless the user provides that information.
+- Clearly distinguish estimated information from confirmed
+  information.
+- If the user asks for flights or hotels, provide useful
+  recommendations, areas, planning guidance and approximate
+  budget information.
 - Never fabricate booking confirmation numbers.
 - Never fabricate real-time prices or schedules.
 
-When appropriate, structure the response using:
+Structure the answer when appropriate using:
 
 1. Trip Overview
 2. Recommended Itinerary
@@ -140,12 +140,12 @@ When appropriate, structure the response using:
 4. Hotels
 5. Transportation
 6. Food Recommendations
-7. Activities / Attractions
+7. Activities and Attractions
 8. Estimated Budget
 9. Travel Tips
 10. Important Things to Check
 
-Keep the answer practical and easy to read.
+Make the response practical, detailed and easy to read.
 """
 
     messages = [
@@ -159,13 +159,10 @@ Keep the answer practical and easy to read.
 
 
 # ============================================================
-# EMAIL CONFIGURATION
+# EMAIL SETTINGS
 # ============================================================
 
 def get_email_settings():
-    """
-    Read SMTP settings from Streamlit Secrets/environment variables.
-    """
 
     return {
         "host": get_secret("SMTP_HOST"),
@@ -176,15 +173,16 @@ def get_email_settings():
     }
 
 
+# ============================================================
+# SEND EMAIL
+# ============================================================
+
 def send_email(
     sender_email,
     receiver_email,
     subject,
     travel_information,
 ):
-    """
-    Send travel information through SMTP.
-    """
 
     settings = get_email_settings()
 
@@ -202,8 +200,11 @@ def send_email(
 
     try:
         port = int(settings["port"])
+
     except ValueError as exc:
-        raise ValueError("SMTP_PORT must be a number.") from exc
+        raise ValueError(
+            "SMTP_PORT must be a number."
+        ) from exc
 
     message = EmailMessage()
 
@@ -211,7 +212,6 @@ def send_email(
     message["From"] = settings["username"]
     message["To"] = receiver_email
 
-    # Allows the receiver to reply to the email entered by the user.
     if sender_email:
         message["Reply-To"] = sender_email
 
@@ -229,13 +229,19 @@ Generated by AI Travel Agent
 """
     )
 
-    use_tls = str(settings["use_tls"]).lower() in {
+    use_tls = str(
+        settings["use_tls"]
+    ).lower() in {
         "true",
         "1",
         "yes",
     }
 
-    with smtplib.SMTP(settings["host"], port, timeout=30) as server:
+    with smtplib.SMTP(
+        settings["host"],
+        port,
+        timeout=30,
+    ) as server:
 
         if use_tls:
             server.starttls()
@@ -249,22 +255,25 @@ Generated by AI Travel Agent
 
 
 # ============================================================
-# UI - HEADER
+# HEADER
 # ============================================================
 
 def render_header():
 
     st.markdown(
-        '<div class="main-title">✈️🌍 AI Travel Agent 🏨🗺️</div>',
+        '<div class="main-title">'
+        '✈️🌍 AI Travel Agent 🏨🗺️'
+        '</div>',
         unsafe_allow_html=True,
     )
 
     st.markdown(
         """
         <div class="sub-title">
-        Enter your travel requirements and get an AI-generated
-        travel plan with itinerary, flight guidance, hotel
-        suggestions, activities and budget information.
+        Enter your travel requirements and get an
+        AI-generated travel plan with itinerary,
+        flight guidance, hotel suggestions,
+        activities and budget information.
         </div>
         """,
         unsafe_allow_html=True,
@@ -272,7 +281,7 @@ def render_header():
 
 
 # ============================================================
-# UI - SIDEBAR
+# SIDEBAR
 # ============================================================
 
 def render_sidebar():
@@ -285,14 +294,14 @@ def render_sidebar():
             """
             This AI assistant can help you plan:
 
-            • Destinations  
-            • Itineraries  
-            • Flights  
-            • Hotels  
-            • Activities  
-            • Transportation  
-            • Food  
-            • Budget  
+            • Destinations
+            • Itineraries
+            • Flights
+            • Hotels
+            • Activities
+            • Transportation
+            • Food
+            • Budget
             • Travel tips
             """
         )
@@ -301,20 +310,21 @@ def render_sidebar():
 
         st.info(
             """
-            Flight and hotel prices/availability are not live
-            unless a real-time travel API is connected.
+            Flight and hotel prices/availability are not
+            live unless a real-time travel API is connected.
             """
         )
 
         st.divider()
 
         st.caption(
-            "AI Travel Agent • Built with Streamlit + LangChain + OpenAI"
+            "AI Travel Agent • "
+            "Streamlit + LangChain + Google Gemini"
         )
 
 
 # ============================================================
-# UI - TRAVEL INPUT
+# TRAVEL INPUT
 # ============================================================
 
 def render_travel_input():
@@ -326,9 +336,10 @@ def render_travel_input():
         height=180,
         placeholder=(
             "Example:\n"
-            "Plan a 7-day trip from Delhi to Dubai for 2 people "
-            "with a budget of ₹1,50,000. Include hotels, "
-            "activities, transportation and a daily itinerary."
+            "Plan a 7-day trip from Delhi to Dubai for "
+            "2 people with a budget of ₹1,50,000. "
+            "Include hotels, activities, transportation "
+            "and a daily itinerary."
         ),
         key="travel_query",
     )
@@ -337,7 +348,7 @@ def render_travel_input():
 
 
 # ============================================================
-# PROCESS TRAVEL QUERY
+# PROCESS QUERY
 # ============================================================
 
 def process_query(user_input):
@@ -356,11 +367,15 @@ def process_query(user_input):
 
         try:
 
-            travel_information = generate_travel_information(
-                user_input.strip()
+            travel_information = (
+                generate_travel_information(
+                    user_input.strip()
+                )
             )
 
-            st.session_state.travel_info = travel_information
+            st.session_state.travel_info = (
+                travel_information
+            )
 
         except Exception as exc:
 
@@ -446,7 +461,9 @@ def render_email_form():
                 sender_email=sender_email.strip(),
                 receiver_email=receiver_email.strip(),
                 subject=subject.strip(),
-                travel_information=st.session_state.travel_info,
+                travel_information=(
+                    st.session_state.travel_info
+                ),
             )
 
             st.success(
@@ -461,7 +478,7 @@ def render_email_form():
 
 
 # ============================================================
-# MAIN APPLICATION
+# MAIN
 # ============================================================
 
 def main():
@@ -489,7 +506,7 @@ def main():
     st.markdown(
         """
         <div class="footer">
-        AI Travel Agent • Streamlit • LangChain • OpenAI
+        AI Travel Agent • Streamlit • LangChain • Google Gemini
         </div>
         """,
         unsafe_allow_html=True,
@@ -497,8 +514,9 @@ def main():
 
 
 # ============================================================
-# APPLICATION ENTRY POINT
+# RUN APPLICATION
 # ============================================================
 
 if __name__ == "__main__":
     main()
+```
