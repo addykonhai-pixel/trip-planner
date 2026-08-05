@@ -1,4 +1,4 @@
-```python
+
 import os
 import smtplib
 import uuid
@@ -557,4 +557,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-```
