@@ -57,7 +57,7 @@ def get_secret(name):
 
 
 def get_google_api_key():
-    return get_secret("GOOGLE_API_KEY")
+    return "PASTE_YOUR_GOOGLE_API_KEY_HERE"
 
 
 @st.cache_resource
@@ -71,10 +71,9 @@ def initialize_model(api_key):
 def generate_travel_information(user_query):
     api_key = get_google_api_key()
 
-    if not api_key:
+    if not api_key or api_key == "PASTE_YOUR_GOOGLE_API_KEY_HERE":
         raise ValueError(
-            "Google API key not found. "
-            "Please add GOOGLE_API_KEY to Streamlit Secrets."
+            "Google API key has not been added to app.py."
         )
 
     llm = initialize_model(api_key)
