@@ -2,7 +2,7 @@
 import os
 import uuid
 
-pip install -U langchain-core
+!pip install -U langchain-core
 
 import streamlit as st
 from langchain_core.messages import HumanMessage
