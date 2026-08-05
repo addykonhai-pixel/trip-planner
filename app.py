@@ -1,4 +1,4 @@
-```python
+
 import os
 import smtplib
 import uuid
